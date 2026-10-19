@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LinkHub test links</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #101828;
+      color: #f8fafc;
+    }
+
+    body {
+      margin: 0;
+      padding: 32px;
+    }
+
+    main {
+      max-width: 1280px;
+      margin: auto;
+    }
+
+    h1 { margin-top: 0; }
+
+    p, label { color: #cbd5e1; }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 14px;
+    }
+
+    input, select, button {
+      border: 1px solid #475569;
+      border-radius: 8px;
+      font: inherit;
+      padding: 10px 12px;
+    }
+
+    input, select {
+      background: #1e293b;
+      color: #f8fafc;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #172033;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    th, td {
+      border-bottom: 1px solid #334155;
+      padding: 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th { background: #1e293b; }
+
+    code {
+      color: #a5f3fc;
+      font-size: 13px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    a, button {
+      background: #0f766e;
+      color: #f8fafc;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    button {
+      background: #334155;
+    }
+
+    a:hover, button:hover { filter: brightness(1.15); }
+
+    .hint {
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 700px) {
+      body { padding: 16px; }
+      table, thead, tbody, tr, th, td { display: block; }
+      thead { display: none; }
+      tr { padding: 12px 0; }
+      td { border: 0; padding: 6px 14px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>LinkHub test links</h1>
+    <p class="hint">
+      Android uses the LinkHub redirect for the selected environment. iOS uses the callback route
+      on <code>system.aliorbank.pl</code> with the selected environment path.
+    </p>
+
+    <section class="controls" aria-label="Link settings">
+      <label>
+        Environment
+        <select id="environment">
+          <option value="tst">TST</option>
+          <option value="acc">AKCEPT</option>
+          <option value="prd">PROD</option>
+        </select>
+      </label>
+      <label>
+        partnerId
+        <input id="partnerId" placeholder="TST_KI2">
+      </label>
+      <label>
+        applicationId
+        <input id="applicationId" placeholder="rotator">
+      </label>
+      <label>
+        gclid
+        <input id="gclid" placeholder="Optional">
+      </label>
+      <label>
+        gbraid
+        <input id="gbraid" placeholder="Optional">
+      </label>
+      <label>
+        wbraid
+        <input id="wbraid" placeholder="Optional">
+      </label>
+      <label>
+        fbc
+        <input id="fbc" placeholder="Optional">
+      </label>
+      <label>
+        fbclid
+        <input id="fbclid" placeholder="Optional">
+      </label>
+    </section>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Wniosek</th>
+          <th>Code</th>
+          <th>Android/iOS Link</th>
+          <th>Link Fallback</th>
+        </tr>
+      </thead>
+      <tbody id="links"></tbody>
+    </table>
+  </main>
+
+  <script>
+    const applications = [
+      ["Alior Konto", "WNIOSEK_AK"],
+      ["Alior Konto Plus", "WNIOSEK_AKP"],
+      ["Konto walutowe EUR", "WNIOSEK_RWA_EUR"],
+      ["Konto walutowe USD", "WNIOSEK_RWA_USD"],
+      ["Konto walutowe GBP", "WNIOSEK_RWA_GBP"],
+      ["Konto walutowe CHF", "WNIOSEK_RWA_CHF"],
+      ["Konto Max Oszczednosciowe", "WNIOSEK_KMO"],
+      ["Alior Konto Oszczednosciowe", "WNIOSEK_AKO"],
+      ["Lokata na nowe srodki", "WNIOSEK_LNNS"],
+      ["Lokata standardowa", "WNIOSEK_LS"],
+      ["Karta kredytowa Mastercard OK!", "WNIOSEK_KKOK"],
+      ["Karta kredytowa Mastercard TU i TAM", "WNIOSEK_KKMTT"],
+      ["Limit w koncie osobistym", "WNIOSEK_LWKO"],
+      ["Kredyty", "WNIOSKI_KREDYTY"],
+      ["Ubezpieczenie", "WNIOSKI_UBEZPIECZENIA"],
+      ["Oferta dla mlodych", "WNIOSKI_DLAMLODYCH"],
+      ["Inwestycje", "WNIOSKI_INWESTYCJE"],
+      ["Oszczednosci", "WNIOSKI_OSZCZEDNOSCI"],
+      ["Konta", "WNIOSKI_KONTA"],
+      ["Karty", "WNIOSKI_KARTY"],
+      ["Dla Ciebie", "WNIOSKI_DLACIEBIE"],
+    ];
+
+    const hosts = {
+      tst: "test.system.aliorbank.pl",
+      acc: "akcept.system.aliorbank.pl",
+      prd: "system.aliorbank.pl",
+    };
+
+    const inputs = [
+      "environment",
+      "partnerId",
+      "applicationId",
+      "gclid",
+      "gbraid",
+      "wbraid",
+      "fbc",
+      "fbclid",
+    ].map((id) => document.getElementById(id));
+
+    function paramsFor(code) {
+      const params = new URLSearchParams({ code });
+      inputs.slice(1).forEach((input) => {
+        if (input.value.trim()) {
+          params.set(input.id, input.value.trim());
+        }
+      });
+      return params.toString();
+    }
+
+    function linksFor(code) {
+      const environment = document.getElementById("environment").value;
+      const parameters = paramsFor(code);
+      return {
+        android: `https://${hosts[environment]}/ib/api/linkhub/redirect?${parameters}`,
+        ios: `https://system.aliorbank.pl/mobile/${environment}/redirect/open?${parameters}`,
+      };
+    }
+
+    function actions(url) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "actions";
+
+      const open = document.createElement("a");
+      open.href = url;
+      open.target = "_blank";
+      open.rel = "noopener";
+      open.textContent = "Otworz";
+
+      const copy = document.createElement("button");
+      copy.type = "button";
+      copy.textContent = "Kopiuj";
+      copy.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(url);
+        copy.textContent = "Skopiowano";
+        setTimeout(() => { copy.textContent = "Kopiuj"; }, 1500);
+      });
+
+      wrapper.append(open, copy);
+      return wrapper;
+    }
+
+    function render() {
+      const rows = document.getElementById("links");
+      rows.replaceChildren();
+
+      applications.forEach(([name, code]) => {
+        const urls = linksFor(code);
+        const row = document.createElement("tr");
+        const nameCell = document.createElement("td");
+        const codeCell = document.createElement("td");
+        const androidCell = document.createElement("td");
+        const iosCell = document.createElement("td");
+
+        nameCell.textContent = name;
+        codeCell.innerHTML = `<code>${code}</code>`;
+        androidCell.append(actions(urls.android));
+        iosCell.append(actions(urls.ios));
+        row.append(nameCell, codeCell, androidCell, iosCell);
+        rows.append(row);
+      });
+    }
+
+    inputs.forEach((input) => input.addEventListener("input", render));
+    render();
+  </script>
+</body>
+</html>
